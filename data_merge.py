@@ -227,7 +227,7 @@ abbrev_us_state = dict(map(reversed, us_state_abbrev.items()))
 unemp = pd.read_excel('data/laucntycur14.xlsx', skiprows=4)
 unemp = unemp[1:45065]
 unemp['county_name'] = unemp['County Name/State Abbreviation'].str.extract('(\w*)')
-unemp['state_name'] = unemp['County Name/State Abbreviation'].str.extract(', (\w*)')
+unemp['state_name'] = unemp['County Name/State Abbreviation'].str.extract(', (.*)')
 unemp = unemp[unemp['state_name'] != 'PR']
 
 unemp = unemp.loc[:, ['Period', '(%)', 'County Name/State Abbreviation']]
