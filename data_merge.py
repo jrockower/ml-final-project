@@ -59,6 +59,7 @@ C24060_006E - production, transportation, and material moving
 
 import requests
 import pandas as pd
+import numpy as np
 
 #Constants
 #The internet saved me on this one: https://gist.github.com/rogerallen/1583593
@@ -154,6 +155,8 @@ df.rename({'B02001_001E': 'total_pop', 'B19013_001E': 'median_income'}, axis=1, 
 df['prop_white'] = df['B02001_002E'] / df['total_pop']
 df['prop_black'] = df['B02001_003E'] / df['total_pop']
 df['prop_hisp'] = df['B03001_003E'] / df['total_pop']
+
+df['log_med_income'] = np.log(df['median_income'])
 
 #Internet access
 df['prop_no_internet'] = df['B28002_013E'] / df['total_pop']
