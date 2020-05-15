@@ -203,6 +203,9 @@ merged = merged.merge(jhu_testing, how='inner', on='state_name')
 govparty = pd.read_csv('data/kff_statepoliticalparties.csv', skiprows=2)
 govparty = govparty.loc[1:, ['Location', 'Governor Political Affiliation']]
 govparty.rename({'Location': 'state_name', 'Governor Political Affiliation': 'gov_party'}, axis=1, inplace=True)
+# Convert gov_party to a boolean
+govparty['gov_party'] = govparty['gov_party'] = [
+    1 if (x == 'Republican') else 0 for x in govparty['gov_party']]
 merged = merged.merge(govparty, how='inner', on='state_name')
 
 election = pd.read_csv('data/countypres_2000-2016.csv')
@@ -236,7 +239,5 @@ unemp_final.rename({'Mar-20 p': 'Mar-20'}, axis=1, inplace=True)
 
 merged = merged.merge(unemp_final, how='inner', on='FIPS')
 
-
 #Write out to pickle
 merged.to_pickle('data/final_dataset.pk1')
-
