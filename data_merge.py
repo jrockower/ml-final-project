@@ -60,110 +60,9 @@ C24060_006E - production, transportation, and material moving
 import requests
 import pandas as pd
 
-
-#Import and clean ACS and Census data
-HOST = "https://api.census.gov/data"
-year = "2018"
-dataset = "acs/acs5"
-base_url = "/".join([HOST, year, dataset])
-predicates = {}
-get_vars = ['NAME', 'B02001_001E', 'B02001_002E', 'B02001_003E', 'B03001_003E',
-            'B28002_013E', 'B15003_022E', 'B23006_023E', 'B19013_001E',
-            'C24050_012E']
-predicates["get"] = ",".join(get_vars)
-predicates["for"] = "county:*"
-r = requests.get(base_url, params=predicates)
-
-df = pd.DataFrame(data=r.json())
-df.columns = df.iloc[0]
-df = df[1:]
-df['county_name'] = df['NAME'].str.extract('(\w*)')
-df['state_name'] = df['NAME'].str.extract(', (.*)')
-
-#Clean columns and column names
-#Change column types to int
-cols_to_change = ['B02001_001E', 'B02001_002E', 'B02001_003E', 'B03001_003E',
-            'B28002_013E', 'B15003_022E', 'B23006_023E', 'B19013_001E',
-            'C24050_012E']
-for col in cols_to_change:
-    df[col] = pd.to_numeric(df[col])
-
-
-#Race
-df.rename({'B02001_001E': 'total_pop', 'B19013_001E': 'median_income'}, axis=1, inplace=True)
-df['prop_white'] = df['B02001_002E'] / df['total_pop']
-df['prop_black'] = df['B02001_003E'] / df['total_pop']
-df['prop_hisp'] = df['B03001_003E'] / df['total_pop']
-
-#Internet access
-df['prop_no_internet'] = df['B28002_013E'] / df['total_pop']
-
-#Education
-df['prop_ba'] = df['B15003_022E'] / df['total_pop']
-
-#Occupation
-df['prop_services'] = df['C24050_012E'] / df['total_pop']
-
-#Drop extra columns
-df_clean = df.drop(['B02001_002E', 'B02001_003E', 'B03001_003E',
-            'B28002_013E', 'B15003_022E', 'B23006_023E', 'C24050_012E'], axis=1)
-
-
-#Get population density
-base_url = 'https://api.census.gov/data/2018/pep/population'
-predicates = {}
-get_vars = ['DENSITY']
-predicates["get"] = ",".join(get_vars)
-predicates["for"] = "county:*"
-r2 = requests.get(base_url, params=predicates)
-
-density = pd.DataFrame(data=r2.json())
-density.columns = density.iloc[0]
-density = density[1:]
-
-df_merged = df_clean.merge(density, on=['state', 'county'])
-df_merged.rename({'NAME': 'name', 'DENSITY': 'pop_density'}, axis=1, inplace=True)
-
-
-#Merge in JHU data
-jhu_cases = pd.read_csv('data/jhu/county_cases_04-30-2020.csv')
-jhu_cases = jhu_cases.loc[:, ['Admin2', 'Province_State', 'Confirmed']]
-merged = df_merged.merge(jhu_cases, how='left', left_on=['county_name', 'state_name'], right_on=['Admin2', 'Province_State'])
-merged.drop(['Admin2', 'Province_State'], axis=1, inplace=True).rename({'Confirmed': 'covid_cases'}, axis=1, inplace=True)
-
-jhu_testing = pd.read_csv('data/jhu/statecovid_04-30-2020.csv')
-jhu_testing = jhu_testing[['Province_State', 'Testing_rate']].rename({'Province_State': 'state_name'}, axis=1)
-merged = merged.merge(jhu_testing, how='left', on='state_name')
-
-
-#Merge in political data
-govparty = pd.read_csv('data/kff_statepoliticalparties.csv', skiprows=2)
-govparty = govparty.loc[1:, ['Location', 'Governor Political Affiliation']]
-govparty.rename({'Location': 'state_name', 'Governor Political Affiliation': 'gov_party'}, axis=1, inplace=True)
-merged = merged.merge(govparty, how='left', on='state_name')
-
-election = pd.read_csv('data/countypres_2000-2016.csv')
-election = election[election['year'] == 2016]
-election['prop_votes'] = election['candidatevotes'] / election['totalvotes']
-election['county_state'] = election['county'] + ', ' + election['state']
-election = election[(election['candidate'] == 'Hillary Clinton') | (election['candidate'] == 'Donald Trump')]
-
-election_grp = election.groupby(['county_state', 'candidate']).agg({'candidatevotes': 'sum', 'totalvotes': 'sum'}).reset_index()
-election_grp['prop_votes'] = election_grp['candidatevotes'] / election_grp['totalvotes']
-
-election_clean = election_grp.pivot(index='county_state', columns='candidate', values='prop_votes').reset_index()
-election_clean['election_diff'] = election_clean['Donald Trump'] - election_clean['Hillary Clinton']
-election_clean['county_name'] = election_clean['county_state'].str.extract('(\w*),')
-election_clean['state_name'] = election_clean['county_state'].str.extract(', (.*)')
-election_clean = election_clean.loc[:, ['county_name', 'state_name', 'election_diff']]
-
-merged = merged.merge(election_clean, how='left', on=['county_name', 'state_name'])
-
-
-#Unemployment data
-
+#Constants
 #The internet saved me on this one: https://gist.github.com/rogerallen/1583593
-us_state_abbrev = {
+US_STATE_ABBREV = {
     'Alabama': 'AL',
     'Alaska': 'AK',
     'American Samoa': 'AS',
@@ -222,11 +121,112 @@ us_state_abbrev = {
     'Wyoming': 'WY'
 }
 
-abbrev_us_state = dict(map(reversed, us_state_abbrev.items()))
+
+#Import and clean ACS and Census data
+HOST = "https://api.census.gov/data"
+year = "2018"
+dataset = "acs/acs5"
+base_url = "/".join([HOST, year, dataset])
+predicates = {}
+get_vars = ['NAME', 'B02001_001E', 'B02001_002E', 'B02001_003E', 'B03001_003E',
+            'B28002_013E', 'B15003_022E', 'B23006_023E', 'B19013_001E',
+            'C24050_012E']
+predicates["get"] = ",".join(get_vars)
+predicates["for"] = "county:*"
+r = requests.get(base_url, params=predicates)
+
+df = pd.DataFrame(data=r.json())
+df.columns = df.iloc[0]
+df = df[1:]
+df['county_name'] = df['NAME'].str.extract('(.*) County')
+df['state_name'] = df['NAME'].str.extract(', (.*)')
+
+#Clean columns and column names
+#Change column types to int
+cols_to_change = ['B02001_001E', 'B02001_002E', 'B02001_003E', 'B03001_003E',
+            'B28002_013E', 'B15003_022E', 'B23006_023E', 'B19013_001E',
+            'C24050_012E']
+for col in cols_to_change:
+    df[col] = pd.to_numeric(df[col])
+
+#Race
+df.rename({'B02001_001E': 'total_pop', 'B19013_001E': 'median_income'}, axis=1, inplace=True)
+df['prop_white'] = df['B02001_002E'] / df['total_pop']
+df['prop_black'] = df['B02001_003E'] / df['total_pop']
+df['prop_hisp'] = df['B03001_003E'] / df['total_pop']
+
+#Internet access
+df['prop_no_internet'] = df['B28002_013E'] / df['total_pop']
+
+#Education
+df['prop_ba'] = df['B15003_022E'] / df['total_pop']
+
+#Occupation
+df['prop_services'] = df['C24050_012E'] / df['total_pop']
+
+#Drop extra columns
+df_clean = df.drop(['B02001_002E', 'B02001_003E', 'B03001_003E',
+            'B28002_013E', 'B15003_022E', 'B23006_023E', 'C24050_012E'], axis=1)
+
+
+#Get population density
+base_url = 'https://api.census.gov/data/2018/pep/population'
+predicates = {}
+get_vars = ['DENSITY']
+predicates["get"] = ",".join(get_vars)
+predicates["for"] = "county:*"
+r2 = requests.get(base_url, params=predicates)
+
+density = pd.DataFrame(data=r2.json())
+density.columns = density.iloc[0]
+density = density[1:]
+
+df_merged = df_clean.merge(density, on=['state', 'county'])
+df_merged.rename({'NAME': 'name', 'DENSITY': 'pop_density'}, axis=1, inplace=True)
+
+
+#Merge in JHU data
+jhu_cases = pd.read_csv('data/jhu/county_cases_04-30-2020.csv')
+jhu_cases = jhu_cases.loc[:, ['Admin2', 'Province_State', 'Confirmed']]
+merged = df_merged.merge(jhu_cases, how='left', left_on=['county_name', 'state_name'], right_on=['Admin2', 'Province_State'])
+merged = merged.drop(['Admin2', 'Province_State'], axis=1)
+merged = merged.rename({'Confirmed': 'covid_cases'}, axis=1)
+
+jhu_testing = pd.read_csv('data/jhu/statecovid_04-30-2020.csv')
+jhu_testing = jhu_testing[['Province_State', 'Testing_Rate']]
+jhu_testing = jhu_testing.rename({'Province_State': 'state_name'}, axis=1)
+merged = merged.merge(jhu_testing, how='left', on='state_name')
+
+
+#Merge in political data
+govparty = pd.read_csv('data/kff_statepoliticalparties.csv', skiprows=2)
+govparty = govparty.loc[1:, ['Location', 'Governor Political Affiliation']]
+govparty.rename({'Location': 'state_name', 'Governor Political Affiliation': 'gov_party'}, axis=1, inplace=True)
+merged = merged.merge(govparty, how='left', on='state_name')
+
+election = pd.read_csv('data/countypres_2000-2016.csv')
+election = election[election['year'] == 2016]
+election['prop_votes'] = election['candidatevotes'] / election['totalvotes']
+election['county_state'] = election['county'] + ', ' + election['state']
+election = election[(election['candidate'] == 'Hillary Clinton') | (election['candidate'] == 'Donald Trump')]
+
+election_grp = election.groupby(['county_state', 'candidate']).agg({'candidatevotes': 'sum', 'totalvotes': 'sum'}).reset_index()
+election_grp['prop_votes'] = election_grp['candidatevotes'] / election_grp['totalvotes']
+
+election_clean = election_grp.pivot(index='county_state', columns='candidate', values='prop_votes').reset_index()
+election_clean['election_diff'] = election_clean['Donald Trump'] - election_clean['Hillary Clinton']
+election_clean['county_name'] = election_clean['county_state'].str.extract('(.*),')
+election_clean['state_name'] = election_clean['county_state'].str.extract(', (.*)')
+election_clean = election_clean.loc[:, ['county_name', 'state_name', 'election_diff']]
+
+merged = merged.merge(election_clean, how='left', on=['county_name', 'state_name'])
+
+#Unemployment data
+abbrev_us_state = dict(map(reversed, US_STATE_ABBREV.items()))
 
 unemp = pd.read_excel('data/laucntycur14.xlsx', skiprows=4)
 unemp = unemp[1:45065]
-unemp['county_name'] = unemp['County Name/State Abbreviation'].str.extract('(\w*)')
+unemp['county_name'] = unemp['County Name/State Abbreviation'].str.extract('(.*) County')
 unemp['state_name'] = unemp['County Name/State Abbreviation'].str.extract(', (.*)')
 unemp = unemp[unemp['state_name'] != 'PR']
 
@@ -244,3 +244,4 @@ merged = merged.merge(unemp_final, how='left', on=['county_name', 'state_name'])
 
 #Write out to csv
 merged.to_csv('data/final_dataset.csv')
+
