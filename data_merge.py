@@ -183,65 +183,60 @@ density = density[1:]
 
 df_merged = df_clean.merge(density, on=['state', 'county'])
 df_merged.rename({'NAME': 'name', 'DENSITY': 'pop_density'}, axis=1, inplace=True)
-
+df_merged['FIPS'] = (df_merged['state'].astype(
+    str) + df_merged['county'].astype(str).str.pad(3, fillchar='0')).astype(float)
 
 #Merge in JHU data
 jhu_cases = pd.read_csv('data/jhu/county_cases_04-30-2020.csv')
-jhu_cases = jhu_cases.loc[:, ['Admin2', 'Province_State', 'Confirmed']]
-merged = df_merged.merge(jhu_cases, how='left', left_on=['county_name', 'state_name'], right_on=['Admin2', 'Province_State'])
+jhu_cases = jhu_cases.loc[:, ['Admin2', 'Province_State', 'Confirmed', 'FIPS']]
+merged = df_merged.merge(jhu_cases, how='inner', on='FIPS')
 merged = merged.drop(['Admin2', 'Province_State'], axis=1)
 merged = merged.rename({'Confirmed': 'covid_cases'}, axis=1)
 
 jhu_testing = pd.read_csv('data/jhu/statecovid_04-30-2020.csv')
 jhu_testing = jhu_testing[['Province_State', 'Testing_Rate']]
 jhu_testing = jhu_testing.rename({'Province_State': 'state_name'}, axis=1)
-merged = merged.merge(jhu_testing, how='left', on='state_name')
+merged = merged.merge(jhu_testing, how='inner', on='state_name')
 
 
 #Merge in political data
 govparty = pd.read_csv('data/kff_statepoliticalparties.csv', skiprows=2)
 govparty = govparty.loc[1:, ['Location', 'Governor Political Affiliation']]
 govparty.rename({'Location': 'state_name', 'Governor Political Affiliation': 'gov_party'}, axis=1, inplace=True)
-merged = merged.merge(govparty, how='left', on='state_name')
+merged = merged.merge(govparty, how='inner', on='state_name')
 
 election = pd.read_csv('data/countypres_2000-2016.csv')
 election = election[election['year'] == 2016]
 election['prop_votes'] = election['candidatevotes'] / election['totalvotes']
-election['county_state'] = election['county'] + ', ' + election['state']
 election = election[(election['candidate'] == 'Hillary Clinton') | (election['candidate'] == 'Donald Trump')]
 
-election_grp = election.groupby(['county_state', 'candidate']).agg({'candidatevotes': 'sum', 'totalvotes': 'sum'}).reset_index()
+election_grp = election.groupby(['candidate', 'FIPS']).agg({'candidatevotes': 'sum', 'totalvotes': 'sum'}).reset_index()
 election_grp['prop_votes'] = election_grp['candidatevotes'] / election_grp['totalvotes']
 
-election_clean = election_grp.pivot(index='county_state', columns='candidate', values='prop_votes').reset_index()
+election_clean = election_grp.pivot(index='FIPS', columns='candidate', values='prop_votes').reset_index()
 election_clean['election_diff'] = election_clean['Donald Trump'] - election_clean['Hillary Clinton']
-election_clean['county_name'] = election_clean['county_state'].str.extract('(.*),')
-election_clean['state_name'] = election_clean['county_state'].str.extract(', (.*)')
-election_clean = election_clean.loc[:, ['county_name', 'state_name', 'election_diff']]
+election_clean = election_clean.loc[:, ['FIPS', 'election_diff']]
 
-merged = merged.merge(election_clean, how='left', on=['county_name', 'state_name'])
+merged = merged.merge(election_clean, how='inner', on=['FIPS'])
+
 
 #Unemployment data
 abbrev_us_state = dict(map(reversed, US_STATE_ABBREV.items()))
 
 unemp = pd.read_excel('data/laucntycur14.xlsx', skiprows=4)
-unemp = unemp[1:45065]
-unemp['county_name'] = unemp['County Name/State Abbreviation'].str.extract('(.*) County')
-unemp['state_name'] = unemp['County Name/State Abbreviation'].str.extract(', (.*)')
-unemp = unemp[unemp['state_name'] != 'PR']
+unemp = unemp[1:-3] # Removing NA rows and notes from original file
 
-unemp = unemp.loc[:, ['Period', '(%)', 'County Name/State Abbreviation']]
-unemp_long = unemp.pivot(index='County Name/State Abbreviation', columns='Period', values='(%)').reset_index()
-unemp_long['county_name'] = unemp_long['County Name/State Abbreviation'].str.extract('(\w*)')
-unemp_long['state_abbr'] = unemp_long['County Name/State Abbreviation'].str.extract(', (.*)')
+unemp['FIPS'] = unemp['LAUS Code'].str.slice(start=2, stop=7).astype('int')
+unemp = unemp.loc[:, ['Period', '(%)', 'FIPS']]
+unemp_long = unemp.pivot(index='FIPS', columns='Period', values='(%)').reset_index()
 
-unemp_final = unemp_long[['county_name', 'state_abbr', 'Apr-19', 'Mar-19', 'Feb-20', 'Mar-20 p']]
-unemp_final['state_name'] = unemp_final['state_abbr'].map(abbrev_us_state)
+unemp_final = unemp_long[['FIPS', 'Apr-19', 'Mar-19', 'Feb-20', 'Mar-20 p']]
+# unemp_final['state_name'] = unemp_final['state_abbr'].map(abbrev_us_state)
 unemp_final.rename({'Mar-20 p': 'Mar-20'}, axis=1, inplace=True)
 
-merged = merged.merge(unemp_final, how='left', on=['county_name', 'state_name'])
+merged = merged.merge(unemp_final, how='inner', on='FIPS')
 
 
-#Write out to csv
-merged.to_csv('data/final_dataset.csv')
+#Write out to pickle
+merged.to_pickle('data/final_dataset.pk1')
 
