@@ -242,5 +242,18 @@ unemp_final.rename({'Mar-20 p': 'Mar-20'}, axis=1, inplace=True)
 
 merged = merged.merge(unemp_final, how='inner', on='FIPS')
 
-#Write out to pickle
+# Read in stay at home policies
+policies = pd.read_pickle('data/state_policies.pk1')
+
+test = merged.merge(policies, how='inner', left_on='state_name', right_on='state_name')
+merged.rename({'days_closed': 'state_days_closed'}, axis=1, inplace=True)
+
+#Then, merge on county
+df = df.merged(policies, how='left', on=['county_name', 'state_name'])
+
+#If it didn't merge on county, replace with state value
+df['days_closed'] = np.where(
+    df['days_closed'].isna(), df['state_days_closed'], df['days_closed'])
+df = df.drop(columns='state_days_closed')
+
 merged.to_pickle('data/final_dataset.pk1')
