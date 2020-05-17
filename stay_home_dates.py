@@ -51,7 +51,7 @@ merged['days_closed'] = np.where(merged['days_closed_county'] > merged['days_clo
 policy_df = merged.loc[:, ['State', 'County', 'days_closed']]
 policy_df.rename({'State': 'state_name', 'County': 'county_name'}, axis=1, inplace=True)
 
-policy_df.to_pickle('data/state_policies.pkl')
+policy_df.to_pickle('data/state_policies.pk1')
 
 
 
