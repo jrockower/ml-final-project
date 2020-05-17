@@ -245,15 +245,16 @@ merged = merged.merge(unemp_final, how='inner', on='FIPS')
 # Read in stay at home policies
 policies = pd.read_pickle('data/state_policies.pk1')
 
-test = merged.merge(policies, how='inner', left_on='state_name', right_on='state_name')
+state_policies = policies[policies['county_name'].isnull()].drop(columns='county_name')
+merged = merged.merge(state_policies, how='left', on='state_name')
 merged.rename({'days_closed': 'state_days_closed'}, axis=1, inplace=True)
 
 #Then, merge on county
-df = df.merged(policies, how='left', on=['county_name', 'state_name'])
+merged = merged.merge(policies, how='left', on=['county_name', 'state_name'])
 
 #If it didn't merge on county, replace with state value
-df['days_closed'] = np.where(
-    df['days_closed'].isna(), df['state_days_closed'], df['days_closed'])
-df = df.drop(columns='state_days_closed')
+merged['days_closed'] = np.where(
+    merged['days_closed'].isna(), merged['state_days_closed'], merged['days_closed'])
+merged.drop(columns='state_days_closed', inplace=True)
 
 merged.to_pickle('data/final_dataset.pk1')
