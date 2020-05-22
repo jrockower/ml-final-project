@@ -46,6 +46,25 @@ def split_data(df, random_state, test_size=0.2):
     return train_test_split(df, test_size=test_size, random_state=random_state)
 
 
+def find_outliers(df, col, min_value, max_value):
+    '''
+    Identify the outliers in a particular column, e.g. to find negative income values.
+    Inputs:
+        df: a dataframe
+        col: the column to inspect
+        min_value: the lowest reasonable value for the column
+        max_value: the highest reasonable value for the column
+    Returns:
+        the number of records falling outside the specified bounds, what those values are,
+        and those records
+    '''
+    rv = df[(df[col] < min_value) | (df[col] > max_value)]
+    print("Number of outliers found: {}".format(len(rv)))
+    print("Outlier values found: {}".format(rv[col].unique()))
+
+    return rv
+
+
 def impute_missing(train_df, test_df, num_cols):
     '''
     Impute missing values of continuous variables using the median value from
@@ -195,3 +214,27 @@ def evaluate_classifiers(model_key, params, test_t, test_p):
             'accuracy_score': acc, 'mean_squared_error': mse,
             'mean_absolute_error': mae}
 
+
+def top_pred(model, pred_names, num_preds=5):
+    '''
+    Determine the most important features in a logistic regression model.
+    Inputs:
+        model: the logistic regression model
+        pred_names: (list-like) the names of the predictors
+        num_preds: how many predictors to include
+    returns:
+        the top predictors
+    '''
+    #code source: adapted from a suggestion on
+    #https://stackoverflow.com/questions/43576614/logistic-regression-how-to-find-top-three-feature-that-have-highest-weights
+    coefs = model.coef_[0]
+    top = np.argpartition(coefs, -1 * num_preds)[-1* num_preds:]
+
+    return pred_names[top]
+
+def adj_r2(r2, n, p):
+    comp_r2 = 1 - r2
+    num = n - 1
+    denom = n - p - 1
+
+    return (1 - (comp_r2 * (num/denom)))
