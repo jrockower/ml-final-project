@@ -62,9 +62,10 @@ def impute_missing(train_df, test_df, num_cols):
 
     for col in num_cols:
         med = train_df[col].median()
-        print('Imputing {} missing values with median {}'.format(col, med))
-        train_df.loc[:, col] = train_df[col].fillna(med)
-        test_df.loc[:, col] = test_df[col].fillna(med)
+        if train_df[col].isnull().values.any():
+            print('Imputing {} missing values with median {}'.format(col, med))
+            train_df.loc[:, col] = train_df[col].fillna(med)
+            test_df.loc[:, col] = test_df[col].fillna(med)
 
     return train_df, test_df
 

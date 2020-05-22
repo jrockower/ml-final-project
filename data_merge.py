@@ -255,19 +255,19 @@ unemp_final.rename({'Mar-20 p': 'Mar-20'}, axis=1, inplace=True)
 merged = merged.merge(unemp_final, how='inner', on='FIPS')
 
 # Read in stay at home policies
-policies = pd.read_pickle('data/state_policies.pk1')
+state_policies = pd.read_pickle('data/state_policies.pk1')
+county_policies = pd.read_pickle('data/county_policies.pk1')
 
-state_policies = policies[policies['county_name'].isnull()].drop(columns='county_name')
 merged = merged.merge(state_policies, how='left', on='state_name')
-merged.rename({'days_closed': 'state_days_closed'}, axis=1, inplace=True)
 
 #Then, merge on county
-merged = merged.merge(policies, how='left', on=['county_name', 'state_name'])
+merged = merged.merge(county_policies, how='left', on=['county_name', 'state_name'])
 
 #If it didn't merge on county, replace with state value
 merged['days_closed'] = np.where(
-    merged['days_closed'].isna(), merged['state_days_closed'], merged['days_closed'])
-merged.drop(columns='state_days_closed', inplace=True)
+    merged['days_closed'].isna(), merged['days_closed_state'], merged['days_closed'])
+
+merged.drop(columns='days_closed_state', inplace=True)
 
 # Convert unemployment columns to numeric
 merged[['pop_density', 'Mar-19', 'Apr-19', 'Feb-20', 'Mar-20']] = merged[['pop_density', 'Mar-19', 'Apr-19', 'Feb-20', 'Mar-20']].apply(pd.to_numeric)
