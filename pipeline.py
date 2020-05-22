@@ -70,44 +70,21 @@ def impute_missing(train_df, test_df, num_cols):
     return train_df, test_df
 
 
-def normalize(df, cols, scaler=None):
+def normalize(train, test, atts):
     '''
-    Normalize continuous variables from a Pandas DataFrame
-
-    Inputs:
-        df: a Pandas DataFrame
-        cols (list): a list of columns to normalize
-        scaler (bool): optional parameter. If scaler is not none, use the given
-                       scaler's means and standard deviations to normalize
-                       (used for test set case)
-
-    Returns:
-        a tuple consisting of a normalized DataFrame and a scaler object
+    Normalize continuous variables based on the training data
+    Input:
+        train (pandas dataframe): dataframe of features for train observations
+        test (pandas dataframe): dataframe of features for test observations
+        atts (list of strings): list of attribute names to normalize
+    Return:
+        train_x (pandas dataframe): dataframe of features for train observations
+        test_x (pandas dataframe): dataframe of features for test observations
     '''
-
-    if (scaler is None):
-      scaler = StandardScaler()
-      normalized_features = scaler.fit_transform(
-          pd.DataFrame(df.loc[:, cols]))
-
-    # Normalizing test set (with the values based on the training set)
-    else:
-      normalized_features = scaler.transform(pd.DataFrame(df.loc[:, cols]))
-
-    other_cols = []
-    for col in list(df.columns):
-        if col not in cols:
-            other_cols.append(col)
-
-    others = df.loc[:, other_cols].reset_index().drop(columns=['index'])
-    normalized_df = pd.DataFrame(normalized_features)
-
-    concat = pd.concat([others, normalized_df], axis=1)
-
-    # Recover the original indices and column names
-    concat.columns = list(others.columns) + cols
-
-    return concat, scaler
+    scaler = StandardScaler()
+    train[atts] = scaler.fit_transform(train[atts])
+    test[atts] = scaler.transform(test[atts])
+    return train, test
 
 
 def hot_encode(df, cols):
