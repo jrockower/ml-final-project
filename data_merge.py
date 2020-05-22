@@ -135,7 +135,7 @@ dataset = "acs/acs5"
 base_url = "/".join([HOST, year, dataset])
 predicates = {}
 get_vars = ['NAME', 'B02001_001E', 'B02001_002E', 'B02001_003E', 'B03001_003E',
-            'B28002_013E', 'B28011_001E', 'B15003_001E', 'B15003_022E', 
+            'B28002_013E', 'B28011_001E', 'B15003_001E', 'B15003_022E',
             'B15003_023E', 'B15003_024E', 'B15003_025E',
             'B19013_001E', 'C24050_001E', 'C24050_012E']
 predicates["get"] = ",".join(get_vars)
@@ -151,7 +151,7 @@ df['state_name'] = df['NAME'].str.extract(', (.*)')
 #Clean columns and column names
 #Change column types to int
 cols_to_change = ['B02001_001E', 'B02001_002E', 'B02001_003E', 'B03001_003E',
-            'B28002_013E', 'B28011_001E', 'B15003_001E', 'B15003_022E', 
+            'B28002_013E', 'B28011_001E', 'B15003_001E', 'B15003_022E',
             'B15003_023E', 'B15003_024E', 'B15003_025E',
             'B19013_001E', 'C24050_001E', 'C24050_012E']
 for col in cols_to_change:
@@ -178,7 +178,7 @@ df['prop_services'] = df['C24050_012E'] / df['C24050_001E']
 
 #Drop extra columns
 df_clean = df.drop(['B02001_002E', 'B02001_003E', 'B03001_003E',
-            'B28002_013E', 'B28011_001E', 'B15003_022E', 'B15003_023E', 
+            'B28002_013E', 'B28011_001E', 'B15003_022E', 'B15003_023E',
             'B15003_024E', 'B15003_025E', 'B15003_001E', 'C24050_001E',
             'C24050_012E'], axis=1)
 
@@ -268,5 +268,12 @@ merged = merged.merge(policies, how='left', on=['county_name', 'state_name'])
 merged['days_closed'] = np.where(
     merged['days_closed'].isna(), merged['state_days_closed'], merged['days_closed'])
 merged.drop(columns='state_days_closed', inplace=True)
+
+# Convert unemployment columns to numeric
+merged[['pop_density', 'Mar-19', 'Apr-19', 'Feb-20', 'Mar-20']] = merged[['pop_density', 'Mar-19', 'Apr-19', 'Feb-20', 'Mar-20']].apply(pd.to_numeric)
+
+# Add yearly change fields
+merged['yearly_change'] = (merged['Mar-20'] - merged['Mar-19']) / merged['Mar-19']
+merged['monthly_change'] = (merged['Mar-20'] - merged['Feb-20']) / merged['Feb-20']
 
 merged.to_pickle('data/final_dataset.pk1')

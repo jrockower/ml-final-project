@@ -30,25 +30,6 @@ def get_summary_stats(df):
     print(df.corr())
 
 
-def get_date_range(df, date_col):
-    '''
-    Identify the date range of a Pandas DataFrame
-
-    Inputs:
-        df: a Pandas DataFrame
-        date_col (str): a string for the name of a date column in the DataFrame
-
-    Returns:
-        Prints the date range of the date column
-    '''
-    assert date_col in df.columns
-
-    min_date = df[date_col].min().date()
-    max_date = df[date_col].max().date()
-
-    print('The date range is {} through {}'.format(min_date, max_date))
-
-
 def split_data(df, random_state, test_size=0.2):
     '''
     Split a DataFrame into Training and Testing using Scikit Learn
