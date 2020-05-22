@@ -44,28 +44,16 @@ sah_county['days_closed_county'].fillna(0, inplace=True)
 
 
 #Merge these together, because sometimes state days closed is greater than county days
-merged = sah_county.merge(state_closed, how='outer', on='State')
-merged['days_closed'] = np.where(merged['days_closed_county'] > merged['days_closed_state'],
-                                merged['days_closed_county'], merged['days_closed_state'])
+sah_county_state = sah_county.merge(state_closed, how='left', on='State')
+sah_county_state['days_closed'] = np.where(sah_county_state['days_closed_county'] > sah_county_state['days_closed_state'],
+                                sah_county_state['days_closed_county'], sah_county_state['days_closed_state'])
 
-policy_df = merged.loc[:, ['State', 'County', 'days_closed']]
-policy_df.rename({'State': 'state_name', 'County': 'county_name'}, axis=1, inplace=True)
+county_policy_df = sah_county_state.loc[:, ['State', 'County', 'days_closed']]
+county_policy_df.rename({'State': 'state_name', 'County': 'county_name'}, axis=1, inplace=True)
 
-policy_df.to_pickle('data/state_policies.pk1')
+state_policy_df = state_closed.loc[:, ['State', 'days_closed_state']]
+state_policy_df.rename({'State': 'state_name'}, axis=1, inplace=True)
 
+county_policy_df.to_pickle('data/county_policies.pk1')
+state_policy_df.to_pickle('data/state_policies.pk1')
 
-
-#HOW TO MERGE INTO MAIN DF
-#assuming main df is called df
-#I haven't actually run this so you might need to tweak it
-
-#First, merge on state
-df = df.merge(policy_df, how='left', on='State')
-df.rename({'days_closed': 'state_days_closed'}, axis=1, inplace=True)
-
-#Then, merge on county
-df = df.merged(policy_df, how='left', on=['county_name', 'state_name'])
-
-#If it didn't merge on county, replace with state value
-df['days_closed'] = np.where(df['days_closed'].isna(), df['state_days_closed'], df['days_closed'])
-df = df.drop(columns='state_days_closed')
