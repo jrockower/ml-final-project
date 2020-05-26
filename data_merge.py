@@ -145,8 +145,17 @@ r = requests.get(base_url, params=predicates)
 df = pd.DataFrame(data=r.json())
 df.columns = df.iloc[0]
 df = df[1:]
-df['county_name'] = df['NAME'].str.extract('(.*) County')
+
+#This accounts for some different county naming schemes
+#In particular that Louisiana has parishes and some Virginia
+#counties have the format ___ city, Virginia
+#This messes up DC and regions in Alaska (they're not really counties)
+#But we never join on that now (only join on county name with state policies,
+#and there's nothing for Alaska or DC there). So it doesn't really matter.
+
+df['county_name'] = df['NAME'].str.extract('(.*) \w*,')
 df['state_name'] = df['NAME'].str.extract(', (.*)')
+
 
 #Clean columns and column names
 #Change column types to int
