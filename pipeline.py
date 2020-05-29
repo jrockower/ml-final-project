@@ -133,6 +133,24 @@ def hot_encode(df, cols):
     return pd.get_dummies(df, columns=cols)
 
 
+def rank_models(grid_model_result, head=False):
+    cv_results = pd.DataFrame(grid_model_result.cv_results_)
+    cv_results = cv_results.sort_values('rank_test_score')[['param_poly__degree','param_ridge__alpha', 'rank_test_score', 'mean_test_score']]
+
+    if head:
+        return cv_results.head()
+
+    return cv_results
+
+def rank_models_lasso(grid_model_result, head=False):
+    cv_results = pd.DataFrame(grid_model_result.cv_results_)
+    cv_results = cv_results.sort_values('rank_test_score')[['param_poly__degree','param_lasso__alpha', 'rank_test_score', 'mean_test_score']]
+
+    if head:
+        return cv_results.head()
+
+    return cv_results
+
 def evaluate_model(model, test_features, test_target):
     '''
     Calculates mean squared error, R-squared, and adjusted R-squared
