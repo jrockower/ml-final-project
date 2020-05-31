@@ -6,7 +6,7 @@ Helper functions for analysis.py
 
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
 
@@ -133,23 +133,49 @@ def hot_encode(df, cols):
     return pd.get_dummies(df, columns=cols)
 
 
-def rank_models(grid_model_result, head=False):
+def run_gridsearch(pl, params, train_features, train_target, head=False,
+                   verbose=1):
+    '''
+    Runs a grid search on a pipeline object with specified parameters
+
+    Inputs:
+        pl: a pipeline object
+        params: a dictionary consisting of parameters for a grid search
+        train_features: a Pandas DataFrame including the training features
+        train_target: a Pandas DataFrame including the training target
+        head: a boolean specifying whether or not to return the first 5 rows
+              of the ranking of the various models
+        verbose: an integer specifying the level of progress output
+
+    Returns:
+        a tuple consisting of the model, the resulting model, and the ranked
+        models based on how well they score
+    '''
+
+    grid_model = GridSearchCV(estimator=pl,
+                              param_grid=params,
+                              cv=5,
+                              return_train_score=True,
+                              scoring='neg_mean_squared_error',
+                              iid=True,
+                              verbose=verbose)
+
+    grid_model_result = grid_model.fit(train_features, train_target)
     cv_results = pd.DataFrame(grid_model_result.cv_results_)
-    cv_results = cv_results.sort_values('rank_test_score')[['param_poly__degree','param_ridge__alpha', 'rank_test_score', 'mean_test_score']]
+
+    cols = []
+
+    for key in params:
+        cols.append('param_' + key)
+
+    cols.extend(['rank_test_score', 'mean_test_score'])
+    cv_results = cv_results.sort_values('rank_test_score')[cols]
 
     if head:
         return cv_results.head()
 
-    return cv_results
+    return grid_model, grid_model_result, cv_results
 
-def rank_models_lasso(grid_model_result, head=False):
-    cv_results = pd.DataFrame(grid_model_result.cv_results_)
-    cv_results = cv_results.sort_values('rank_test_score')[['param_poly__degree','param_lasso__alpha', 'rank_test_score', 'mean_test_score']]
-
-    if head:
-        return cv_results.head()
-
-    return cv_results
 
 def evaluate_model(model, test_features, test_target):
     '''
