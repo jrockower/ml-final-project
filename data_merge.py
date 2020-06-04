@@ -66,66 +66,6 @@ import requests
 import pandas as pd
 import numpy as np
 
-#Constants
-#The internet saved me on this one: https://gist.github.com/rogerallen/1583593
-US_STATE_ABBREV = {
-    'Alabama': 'AL',
-    'Alaska': 'AK',
-    'American Samoa': 'AS',
-    'Arizona': 'AZ',
-    'Arkansas': 'AR',
-    'California': 'CA',
-    'Colorado': 'CO',
-    'Connecticut': 'CT',
-    'Delaware': 'DE',
-    'District of Columbia': 'DC',
-    'Florida': 'FL',
-    'Georgia': 'GA',
-    'Guam': 'GU',
-    'Hawaii': 'HI',
-    'Idaho': 'ID',
-    'Illinois': 'IL',
-    'Indiana': 'IN',
-    'Iowa': 'IA',
-    'Kansas': 'KS',
-    'Kentucky': 'KY',
-    'Louisiana': 'LA',
-    'Maine': 'ME',
-    'Maryland': 'MD',
-    'Massachusetts': 'MA',
-    'Michigan': 'MI',
-    'Minnesota': 'MN',
-    'Mississippi': 'MS',
-    'Missouri': 'MO',
-    'Montana': 'MT',
-    'Nebraska': 'NE',
-    'Nevada': 'NV',
-    'New Hampshire': 'NH',
-    'New Jersey': 'NJ',
-    'New Mexico': 'NM',
-    'New York': 'NY',
-    'North Carolina': 'NC',
-    'North Dakota': 'ND',
-    'Northern Mariana Islands':'MP',
-    'Ohio': 'OH',
-    'Oklahoma': 'OK',
-    'Oregon': 'OR',
-    'Pennsylvania': 'PA',
-    'Puerto Rico': 'PR',
-    'Rhode Island': 'RI',
-    'South Carolina': 'SC',
-    'South Dakota': 'SD',
-    'Tennessee': 'TN',
-    'Texas': 'TX',
-    'Utah': 'UT',
-    'Vermont': 'VT',
-    'Virgin Islands': 'VI',
-    'Virginia': 'VA',
-    'Washington': 'WA',
-    'West Virginia': 'WV',
-    'Wisconsin': 'WI',
-    'Wyoming': 'WY'
-}
 
 
 #Import and clean ACS and Census data
@@ -248,18 +188,15 @@ merged = merged.merge(election_clean, how='inner', on=['FIPS'])
 
 
 #Unemployment data
-abbrev_us_state = dict(map(reversed, US_STATE_ABBREV.items()))
-
-unemp = pd.read_excel('data/laucntycur14.xlsx', skiprows=4)
+unemp = pd.read_excel('data/laucntycur14_april.xlsx', skiprows=4)
 unemp = unemp[1:-3] # Removing NA rows and notes from original file
 
 unemp['FIPS'] = unemp['LAUS Code'].str.slice(start=2, stop=7).astype('int')
 unemp = unemp.loc[:, ['Period', '(%)', 'FIPS']]
 unemp_long = unemp.pivot(index='FIPS', columns='Period', values='(%)').reset_index()
 
-unemp_final = unemp_long[['FIPS', 'Apr-19', 'Mar-19', 'Feb-20', 'Mar-20 p']]
-# unemp_final['state_name'] = unemp_final['state_abbr'].map(abbrev_us_state)
-unemp_final.rename({'Mar-20 p': 'Mar-20'}, axis=1, inplace=True)
+unemp_final = unemp_long[['FIPS', 'Apr-19', 'Mar-19', 'Feb-20', 'Mar-20', 'Apr-20 p']]
+unemp_final.rename({'Apr-20 p': 'Apr-20'}, axis=1, inplace=True)
 
 merged = merged.merge(unemp_final, how='inner', on='FIPS')
 
@@ -279,10 +216,12 @@ merged['days_closed'] = np.where(
 merged.drop(columns='days_closed_state', inplace=True)
 
 # Convert unemployment columns to numeric
-merged[['pop_density', 'Mar-19', 'Apr-19', 'Feb-20', 'Mar-20']] = merged[['pop_density', 'Mar-19', 'Apr-19', 'Feb-20', 'Mar-20']].apply(pd.to_numeric)
+merged[['pop_density', 'Mar-19', 'Apr-19', 'Feb-20', 'Mar-20',
+        'Apr-20']] = merged[['pop_density', 'Mar-19', 'Apr-19',
+        'Feb-20', 'Mar-20', 'Apr-20']].apply(pd.to_numeric)
 
 # Add yearly change fields
-merged['yearly_change'] = (merged['Mar-20'] - merged['Mar-19']) / merged['Mar-19']
-merged['monthly_change'] = (merged['Mar-20'] - merged['Feb-20']) / merged['Feb-20']
+merged['yearly_change'] = (merged['Apr-20'] - merged['Apr-19']) / merged['Apr-19']
+merged['monthly_change'] = (merged['Apr-20'] - merged['Feb-20']) / merged['Feb-20']
 
 merged.to_pickle('data/final_dataset.pk1')
