@@ -163,7 +163,7 @@ merged = merged.merge(jhu_testing, how='inner', on='state_name')
 
 
 #Merge in political data
-govparty = pd.read_csv('data/kff_statepoliticalparties.csv', skiprows=2)
+govparty = pd.read_csv('data/elections/kff_statepoliticalparties.csv', skiprows=2)
 govparty = govparty.loc[1:, ['Location', 'Governor Political Affiliation']]
 govparty.rename({'Location': 'state_name', 'Governor Political Affiliation': 'gov_party'}, axis=1, inplace=True)
 
@@ -172,7 +172,7 @@ govparty['gov_party'] = govparty['gov_party'] = [
     1 if (x == 'Republican') else 0 for x in govparty['gov_party']]
 merged = merged.merge(govparty, how='inner', on='state_name')
 
-election = pd.read_csv('data/countypres_2000-2016.csv')
+election = pd.read_csv('data/elections/countypres_2000-2016.csv')
 election = election[election['year'] == 2016]
 election['prop_votes'] = election['candidatevotes'] / election['totalvotes']
 election = election[(election['candidate'] == 'Hillary Clinton') | (election['candidate'] == 'Donald Trump')]
@@ -188,7 +188,7 @@ merged = merged.merge(election_clean, how='inner', on=['FIPS'])
 
 
 #Unemployment data
-unemp = pd.read_excel('data/laucntycur14_april.xlsx', skiprows=4)
+unemp = pd.read_excel('data/acs/laucntycur14_april.xlsx', skiprows=4)
 unemp = unemp[1:-3] # Removing NA rows and notes from original file
 
 unemp['FIPS'] = unemp['LAUS Code'].str.slice(start=2, stop=7).astype('int')
@@ -201,8 +201,8 @@ unemp_final.rename({'Apr-20 p': 'Apr-20'}, axis=1, inplace=True)
 merged = merged.merge(unemp_final, how='inner', on='FIPS')
 
 # Read in stay at home policies
-state_policies = pd.read_pickle('data/state_policies.pk1')
-county_policies = pd.read_pickle('data/county_policies.pk1')
+state_policies = pd.read_pickle('data/pickle/state_policies.pk1')
+county_policies = pd.read_pickle('data/pickle/county_policies.pk1')
 
 merged = merged.merge(state_policies, how='left', on='state_name')
 
@@ -224,4 +224,4 @@ merged[['pop_density', 'Mar-19', 'Apr-19', 'Feb-20', 'Mar-20',
 merged['yearly_change'] = (merged['Apr-20'] - merged['Apr-19']) / merged['Apr-19']
 merged['monthly_change'] = (merged['Apr-20'] - merged['Feb-20']) / merged['Feb-20']
 
-merged.to_pickle('data/final_dataset.pk1')
+merged.to_pickle('data/pickle/final_dataset.pk1')

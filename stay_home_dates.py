@@ -3,7 +3,7 @@ import numpy as np
 from datetime import date
 
 #Read in stay at home order dates and fix some typos
-sah_df = pd.read_excel('data/stay_at_home_orders.xlsx', sheet_name='Clean', header=0)
+sah_df = pd.read_excel('data/interventions/stay_at_home_orders.xlsx', sheet_name='Clean', header=0)
 sah_df.loc[2, 'County'] = 'Anchorage'
 sah_df['County'] = sah_df['County'].replace('all', np.NaN)
 
@@ -12,7 +12,7 @@ sah_county = sah_df.dropna(subset=['County'])
 sah_state = sah_df[sah_df.loc[:, 'County'].isna()].iloc[:, [0, 3]]
 
 #Read in state-level policy dataset
-state_orders = pd.read_csv('data/covid_state_policy.csv')
+state_orders = pd.read_csv('data/interventions/covid_state_policy.csv')
 state_closed = state_orders.loc[:50, ['State', 'Closed non-essential businesses']]
 
 #Merge together state data
@@ -54,6 +54,6 @@ county_policy_df.rename({'State': 'state_name', 'County': 'county_name'}, axis=1
 state_policy_df = state_closed.loc[:, ['State', 'days_closed_state']]
 state_policy_df.rename({'State': 'state_name'}, axis=1, inplace=True)
 
-county_policy_df.to_pickle('data/county_policies.pk1')
-state_policy_df.to_pickle('data/state_policies.pk1')
+county_policy_df.to_pickle('data/pickle/county_policies.pk1')
+state_policy_df.to_pickle('data/pickle/state_policies.pk1')
 
