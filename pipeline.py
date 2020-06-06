@@ -1,20 +1,12 @@
 '''
 Helper functions for analysis.py
 '''
-### I've commented out the modules/functions I don't think we're actually using,
-### but we should clean these up before we submit.
 
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, r2_score
-
-# from sklearn.linear_model import LogisticRegression
-# from sklearn.svm import LinearSVC
-# from sklearn.naive_bayes import GaussianNB
-    #, accuracy_score, mean_absolute_error,
-# import datetime
 
 
 def get_summary_stats(df):
@@ -249,117 +241,3 @@ def calc_adjr2(r2, n, p):
 
     return 1 - (comp_r2 * (num/denom))
 
-
-
-### I BELIEVE THESE INFECTIONS WE DON'T NEED; JUST COMMENTING OUT FOR NOW
-# def discretize(df, col, bins):
-#     '''
-#     Discretize a variable into a specified number of bins
-
-#     Input:
-#         df: a Pandas DataFrame
-#         col (str): the name of the column to discretize
-#         bins (int): the number of bins to split along
-
-#     Return:
-#         A series of discretized values
-#     '''
-
-#     return pd.cut(df[col], bins)
-
-
-# def grid_search(train_f, train_t, test_f, test_t, models, grid):
-#     '''
-#     Build and evaluate classifiers for input models and grid
-
-#     Input:
-#         train_f (df): the training features
-#         train_t (series): the training target
-#         test_f (df): the testing features
-#         test_t (series): the testing target
-#         models (dict): a dictionary of models
-#         grid (dict): a dictionary of parameters for grid search
-
-#     Return:
-#     '''
-
-#     # Begin timer
-#     start = datetime.datetime.now()
-
-#     # Initialize results data frame
-#     results = pd.DataFrame(columns=['model', 'parameters', 'accuracy_score',
-#                                     'mean_squared_error',
-#                                     'mean_absolute_error'])
-
-#     # Loop over models
-#     for model_key in models.keys():
-
-#         # Loop over parameters
-#         for params in grid[model_key]:
-#             print("Training model:", model_key, "|", params)
-
-#             # Create model
-#             model = models[model_key]
-#             model.set_params(**params)
-
-#             # Fit model on training set
-#             model.fit(train_f, train_t)
-
-#             # Predict on testing set
-#             target_predict = model.predict(test_f)
-
-#             # Evaluate predictions
-#             evaluation = evaluate_classifiers(model_key, str(params), test_t,
-#                                               target_predict)
-
-#             # Store results in your results data frame
-#             results = results.append(evaluation, ignore_index=True)
-
-#     # End timer
-#     stop = datetime.datetime.now()
-#     print("Time Elapsed:", stop - start)
-
-#     return results
-
-
-# def evaluate_classifiers(model_key, params, test_t, test_p):
-#     '''
-#     Return the accuracy score, MSE, MAE, and R^2 for a regression
-
-#     Input:
-#         model:
-#         params:
-#         test_t: the test target
-#         test_p: the test prediction
-
-#     Return:
-#         a tuple of evaluation metrics
-#     '''
-
-#     acc = accuracy_score(test_t, test_p)
-#     mse = mean_squared_error(test_t, test_p)
-#     mae = mean_absolute_error(test_t, test_p)
-
-#     return {'model': model_key, 'parameters': params,
-#             'accuracy_score': acc, 'mean_squared_error': mse,
-#             'mean_absolute_error': mae}
-
-
-
-
-# def top_pred(model, pred_names, num_preds=5):
-#     '''
-#     Determine the most important features in a logistic regression model.
-#     Input:
-#         model: the logistic regression model
-#         pred_names: (list-like) the names of the predictors
-#         num_preds: how many predictors to include
-#     Return:
-#         the top predictors
-#     '''
-#     #code source: adapted from a suggestion on
-#     #https://stackoverflow.com/questions/43576614/logistic-regression-how-to-find-top-three-feature-that-have-highest-weights
-#     coefs = model.coef_[0]
-#     top = np.argpartition(coefs, -1 * num_preds)[-1* num_preds:]
-
-#     return pred_names[top]
