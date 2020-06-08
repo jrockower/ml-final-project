@@ -160,7 +160,7 @@ merged = merged.merge(election_clean, how='inner', on=['FIPS'])
 
 
 #Unemployment data
-unemp = pd.read_excel('data/acs/laucntycur14_april.xlsx', skiprows=4)
+unemp = pd.read_excel('data/bls/laucntycur14_april.xlsx', skiprows=4)
 unemp = unemp[1:-3] # Removing NA rows and notes from original file
 
 unemp['FIPS'] = unemp['LAUS Code'].str.slice(start=2, stop=7).astype('int')

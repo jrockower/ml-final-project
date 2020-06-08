@@ -17,9 +17,9 @@
 2. [`visualizations.ipynb`](./visualizations.ipynb)
    * Jupyter Notebook to build various visualizations to be used in report.
 
-## Data Folder
+## Data Directory
 
-1. acs
+1. [bls](./data/bls/)
    * County-level unemployment data through March and April.
 2. elections
    * Data on county-level presidential election margins.
