@@ -1,9 +1,3 @@
-Table of Contents
-- [Unemployment trends amidst COVID-19 and its governance](#unemployment-trends-amidst-covid-19-and-its-governance)
-  - [How to run analysis](#how-to-run-analysis)
-  - [Assorted Programs](#assorted-programs)
-  - [Data Folder](#data-folder)
-
 # Unemployment trends amidst COVID-19 and its governance
 
 ## How to run analysis
