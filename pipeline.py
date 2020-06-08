@@ -1,5 +1,5 @@
 '''
-Helper functions for analysis.py
+Helper functions used in analysis.py
 '''
 
 import pandas as pd
