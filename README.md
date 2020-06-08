@@ -20,7 +20,7 @@
 ## Data Folder
 
 1. acs
-   * County-level unemployment data through March and April
+   * County-level unemployment data through March and April.
 2. elections
    * Data on county-level presidential election margins.
    * State government political party data.
