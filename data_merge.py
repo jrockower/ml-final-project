@@ -22,9 +22,6 @@ ACS VARIABLE NAMES
 B02001_001E - total pop
 B02001_002E - white pop
 B02001_003E - black pop
-B02001_004E - American Indian/Alaska Native pop
-B02001_005E - Asian pop
-B03001_002E - non hispanic pop
 B03001_003E - hispanic pop
 
 B28002_013E - no internet
@@ -39,26 +36,7 @@ B15003_025E - doctorate degree
 B19013_001E - median family income
 
 C24050_001E - industry by occupation total
-C24050_002E - agriculture, forestry, fishing and hunting, mining
-C24050_003E - construction
-C24050_004E - manufacturing
-C24050_005E - wholesale trade
-C24050_006E - retail trade
-C24050_007E - transportation and warehousing
-C24050_008E - information
-C24050_009E - finance, insurance, real estate
-C24050_010E - professional, scientific, and management
-C24050_011E - education services, health care, social assistance
 C24050_012E - arts, entertainment, recreation, accomodation, food services
-C24050_013E - other
-C24050_014E - public administration
-C24060_002E - management, business, science, and arts
-C24060_003E - service occupations
-C24060_004E - sales and office occupations
-C24060_005E - natural resources, construction, maintenance
-C24060_006E - production, transportation, and material moving
-
-
 
 '''
 
@@ -86,13 +64,7 @@ df = pd.DataFrame(data=r.json())
 df.columns = df.iloc[0]
 df = df[1:]
 
-#This accounts for some different county naming schemes
-#In particular that Louisiana has parishes and some Virginia
-#counties have the format ___ city, Virginia
-#This messes up DC and regions in Alaska (they're not really counties)
-#But we never join on that now (only join on county name with state policies,
-#and there's nothing for Alaska or DC there). So it doesn't really matter.
-
+#Separate county and state name
 df['county_name'] = df['NAME'].str.extract('(.*) \w*,')
 df['state_name'] = df['NAME'].str.extract(', (.*)')
 
