@@ -2,19 +2,19 @@
 
 ## How to run analysis
 
-1. `stay_home_dates.py`
+1. [`stay_home_dates.py`](./stay_home_dates.py)
    * Reads in and cleans information on stay at home orders from counties and states.
    * Saves to .pk1 files.
-2. `data_merge.py`
+2. [`data_merge.py`](./data_merge.py)
    * Cleans data and builds features for machine learning models.
-3. `analysis.ipynb`
+3. [`analysis.ipynb`](./analysis.ipynb)
    * Runs various machine learning models.
 
 ## Assorted Programs
 
-1. `pipeline.py`
-   * Helper functions to be used in `analysis.py`.
-2. `visualizations.ipynb`
+1. [`pipeline.py`](./pipeline.py)
+   * Helper functions to be used in [`analysis.py`](./analysis.py).
+2. [`visualizations.ipynb`](./visualizations.ipynb)
    * Jupyter Notebook to build various visualizations to be used in report.
 
 ## Data Folder
