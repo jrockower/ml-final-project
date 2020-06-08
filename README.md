@@ -13,7 +13,7 @@
 ## Assorted Programs
 
 1. [`pipeline.py`](./pipeline.py)
-   * Helper functions to be used in [`analysis.py`](./analysis.py).
+   * Helper functions to be used in [`analysis.ipynb`](./analysis.ipynb).
 2. [`visualizations.ipynb`](./visualizations.ipynb)
    * Jupyter Notebook to build various visualizations to be used in report.
 
